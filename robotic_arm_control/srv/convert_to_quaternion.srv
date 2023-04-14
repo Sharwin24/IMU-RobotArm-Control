@@ -1,0 +1,8 @@
+float64 eulerX
+float64 eulerY
+float64 eulerZ
+---
+float64 quaternionX
+float64 quaternionY
+float64 quaternionZ
+float64 quaternionW

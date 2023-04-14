@@ -1,0 +1,10 @@
+<launch>
+	<arg name="link_1_imu_port" default="/dev/pts/6" />
+	<arg name="link_2_imu_port" default="/dev/pts/5" />
+	<arg name="link_1_imu_topic" default="link_1_imu" />
+	<arg name="link_2_imu_topic" default="link_2_imu" />
+	<node pkg="robotic_arm_control" name="imu_driver_1" type="driverIMU.py" args="$(arg link_1_imu_port link_1_imu_topic)" output="screen"/>
+	<node pkg="robotic_arm_control" name="imu_driver_2" type="driverIMU.py" args="$(arg link_2_imu_port link_2_imu_topic)" output="screen"/>
+	<node pkg='robotic_arm_control' name='imu_driver_3' type='driverIMU.py' args='$(arg link_3_imu_port link_3_imu_topic)' output='screen'/>
+	<node pkg='robotic_arm_control' name='convert_to_quaternion_server' type='convert_to_quaternion_server.py' output='screen'/> 
+</launch>
