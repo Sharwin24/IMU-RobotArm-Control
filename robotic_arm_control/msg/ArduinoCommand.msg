@@ -1,2 +1,4 @@
 Header ArduinoCommand
-string command
+float64 link1AngleDeg
+float64 link2AngleDeg
+float64 link3AngleDeg

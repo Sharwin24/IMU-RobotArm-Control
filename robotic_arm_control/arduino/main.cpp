@@ -2,6 +2,7 @@
 #include <RobotArm.hpp>
 #include <Utils.h>
 #include <ros.h>
+#include <msg/ArduinoCommand.msg>
 
 /**
  * @brief Robot Arm object that supports forward and inverse kinematics
@@ -10,11 +11,13 @@
 RobotArm robotArm = RobotArm();
 
 ros::NodeHandle nodeHandler;
-// ros::Subscriber<
+ros::Subscriber<msg::ArduinoCommand> sub("arduino_command", &arduinoCommandCallback);
 
-void test() {
-  // robotArm.forwardKinematics(0, 90, 0);
+void arduinoCommandCallback(const msg::ArduinoCommand& msg) {
+  if (robotArm.isMoving()) { return; }
+  robotArm.forwardKinematics(msg.link1AngleDeg, msg.link2AngleDeg, msg.link3AngleDeg);
 }
+
 
 void serialReactions() {
   writeState("ready");
@@ -53,10 +56,11 @@ void setup() {
   robotArm.calibrate();
 
   nodeHandler.initNode();
-  nodeHandler.subscribe();
+  // nodeHandler.subscribe();
 }
 
 void loop() {
   //serialReactions();
   nodeHandler.spinOnce();
+  delay(1);
 }

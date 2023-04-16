@@ -10,20 +10,6 @@ import numpy as np
 # Debug Flag will print intermediate debugging statements
 DEBUG = False
 
-# $VNYMR,
-# -165.964, # Yaw
-# -037.285, # Pitch
-# +001.249, # Roll
-# +00.2880, # Mag X
-# +00.0749, # Mag Y
-# +00.7428, # Mag Z
-# -05.966, # Accel X
-# -00.169, # Accel Y
-# -07.846, # Accel Z
-# -00.000235, # Gyro X
-# +00.000263, # Gyro Y
-# -00.000486*63 # Gyro Z
-
 def convert_to_quaternion_client(roll, pitch, yaw):
   rospy.wait_for_service('convert_to_quaternion')
   if DEBUG:
@@ -194,7 +180,7 @@ def driver_publish(serialPort: serial.Serial, driverName: str, topicName: str, m
 if __name__ == '__main__':
     args = rospy.myargv(argv=sys.argv)
     serialPort = serial_port_setup(args[1])
-    topic = args[2]
+    topic = "shoulder_imu"
     try:
         driver_publish(serialPort, driverName='imu_driver', topicName=topic, msgType=Vectornav)
     except rospy.ROSInterruptException:
