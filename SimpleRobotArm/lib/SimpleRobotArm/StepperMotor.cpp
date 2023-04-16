@@ -3,11 +3,11 @@
 #include <Arduino.h>
 #include <Utils.h>
 
-StepperMotor::StepperMotor(int stepPin, int dirPin, float outputGearRatio) {
+StepperMotor::StepperMotor(int linkNumber, int stepPin, int dirPin, float outputGearRatio) {
+	this->linkNumber = linkNumber;
 	this->stepPin = stepPin;
 	this->dirPin = dirPin;
 	this->outputGearRatio = outputGearRatio;
-	this->maxSpeed = LINK_MAX_SPEED;
 }
 
 void StepperMotor::init() {
@@ -19,7 +19,7 @@ void StepperMotor::init() {
 	this->current = 0;
 	this->currentAngle = 0.0f;
 	this->target = 0;
-	this->currentSpeed = this->maxSpeed;
+	this->currentSpeed = LINK_STEPS_PER_SEC;
 	this->currentDelay = getDelayFromSpeed(this->currentSpeed);
 	this->previousChangeTime = micros();
 	this->currentlyRunning = false;
@@ -46,7 +46,8 @@ void StepperMotor::calibrate() {
 	this->currentAngle = 0.0f;
 }
 
-float StepperMotor::getTarget() { return this->target; }
+int StepperMotor::getCurrent() { return this->current; }
+int StepperMotor::getTarget() { return this->target; }
 float StepperMotor::getSpeed() { return this->currentSpeed; }
 long StepperMotor::getDelay() { return this->currentDelay; }
 float StepperMotor::getCurrentAngle() { return this->currentAngle; }
@@ -104,11 +105,17 @@ void StepperMotor::setTarget(int targetStep) {
  */
 void StepperMotor::setTargetAngle(float targetAngleDegrees) {
 	int steps = degreeToSteps(targetAngleDegrees);
+	writeInfo("setTargetAngle [deg,steps] -> Link " + String(this->linkNumber) +
+		" [ " + String(targetAngleDegrees) + ", " + String(steps) + " ]");
 	setTarget(steps);
 }
 
-void StepperMotor::setCurrentAngle(float currentAngleDegrees) {
-	this->currentAngle = currentAngleDegrees;
+/**
+ * @brief Sets the current angle based on the current step
+ *
+ */
+void StepperMotor::setAngle() {
+	this->currentAngle = STEPS_PER_REV * this->current / (360.0f * this->outputGearRatio);
 }
 
 /**
@@ -117,11 +124,9 @@ void StepperMotor::setCurrentAngle(float currentAngleDegrees) {
  *
  */
 bool StepperMotor::isMoving() {
-	if (this->outputGearRatio == 1.0f) {
-		return this->current != this->target;
-	} else { // Otherwise, the difference should be within outputGearRatio steps
-		return abs(this->current - this->target) >= this->outputGearRatio;
-	}
+	return this->outputGearRatio == 1.0f ?
+		this->current != this->target :
+		abs(this->current - this->target) >= this->outputGearRatio;
 }
 
 /**
@@ -164,9 +169,9 @@ void StepperMotor::update() {
 		if (!this->currentlyRunning) {
 			// Increment steps during LOW pulse
 			if (this->current < this->target) { // CW
-				this->current++;//= this->outputGearRatio;
+				this->current++;//= (int)this->outputGearRatio;
 			} else { // CCW
-				this->current--;//= this->outputGearRatio;
+				this->current--;//= (int)this->outputGearRatio;
 			}
 		}
 	}

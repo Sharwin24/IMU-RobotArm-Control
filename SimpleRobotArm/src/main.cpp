@@ -1,8 +1,13 @@
 #include <Arduino.h>
 #include <RobotArm.hpp>
 #include <Utils.h>
+#include <ros.h>
 
 RobotArm robotArm = RobotArm();
+
+void test() {
+  robotArm.forwardKinematics(0, 90, 0);
+}
 
 void serialReactions() {
   writeState("ready");
@@ -29,7 +34,7 @@ void serialReactions() {
     writeInfo("IK [" + String(targetX) + ", " + String(targetY) + "]");
     robotArm.inverseKinematics(targetX, targetY);
   } else if (input.equals("test")) {
-    robotArm.linkToAngle(1, 90.0f);
+    test();
   } else {
     writeError("Invalid Command");
   }

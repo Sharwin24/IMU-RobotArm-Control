@@ -3,14 +3,15 @@
 class StepperMotor {
 public:
 	StepperMotor() = default;
-	StepperMotor(int stepPin, int dirPin, float outputGearRatio);
+	StepperMotor(int linkNumber, int stepPin, int dirPin, float outputGearRatio);
 
 	// Initialize
 	void init();
 	void calibrate();
 
 	// Getters
-	float getTarget();
+	int getCurrent();
+	int getTarget();
 	float getSpeed();
 	long getDelay();
 	float getCurrentAngle();
@@ -21,7 +22,6 @@ public:
 	void setDirection(bool CW);
 	void setTarget(int targetStep);
 	void setTargetAngle(float targetAngleDegrees);
-	void setCurrentAngle(float currentAngleDegrees);
 
 	// State Methods
 	bool isMoving();
@@ -34,6 +34,7 @@ public:
 
 	bool updateToTarget();
 	// Constructor Arguments
+	int linkNumber;
 	int stepPin;
 	int dirPin;
 	float outputGearRatio;
@@ -45,7 +46,6 @@ public:
 	int previous;
 	long previousChangeTime;
 	bool currentlyRunning;
-	long maxSpeed;
 	float currentSpeed;
 	long currentDelay;
 	// Private methods

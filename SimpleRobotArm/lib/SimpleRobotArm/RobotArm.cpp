@@ -1,11 +1,12 @@
 #include "RobotArm.hpp"
 #include "Constants.hpp"
 #include <Arduino.h>
+#include <Utils.h>
 
 RobotArm::RobotArm() {
-	this->link1 = StepperMotor(LINK_1_STEP_PIN, LINK_1_DIR_PIN, 5.0f);
-	this->link2 = StepperMotor(LINK_2_STEP_PIN, LINK_2_DIR_PIN, 5.0f);
-	this->link3 = StepperMotor(LINK_3_STEP_PIN, LINK_3_DIR_PIN, 1.0f);
+	this->link1 = StepperMotor(1, LINK_1_STEP_PIN, LINK_1_DIR_PIN, 5.0f);
+	this->link2 = StepperMotor(2, LINK_2_STEP_PIN, LINK_2_DIR_PIN, 5.0f);
+	this->link3 = StepperMotor(3, LINK_3_STEP_PIN, LINK_3_DIR_PIN, 1.0f);
 }
 
 void RobotArm::init() {
@@ -32,13 +33,17 @@ void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float t
 	this->link1.setTargetAngle(targetAngle1);
 	this->link2.setTargetAngle(targetAngle2);
 	this->link3.setTargetAngle(targetAngle3);
-
+	writeInfo("L1 target: " + String(this->link1.getTarget()) + " speed: " + String(this->link1.getSpeed()));
+	writeInfo("L2 target: " + String(this->link2.getTarget()) + " speed: " + String(this->link2.getSpeed()));
+	writeInfo("L3 target: " + String(this->link3.getTarget()) + " speed: " + String(this->link3.getSpeed()));
 	// Update all links until they are at their target
 	while (this->link1.isMoving() || this->link2.isMoving() || this->link3.isMoving()) {
 		this->link1.update();
 		this->link2.update();
 		this->link3.update();
 	}
+	writeInfo("L1: " + String(this->link1.getCurrent()) + " L2: " + String(this->link2.getCurrent()) + " L3: " + String(this->link3.getCurrent()));
+	writeInfo("Movement complete");
 }
 
 /**
