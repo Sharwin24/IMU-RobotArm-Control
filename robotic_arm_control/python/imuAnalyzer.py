@@ -7,6 +7,18 @@ each link of the robot. It then publishes the angles to the robot controller via
 
 import rospy
 from robotic_arm_control.msg import ArduinoCommand, Vectornav
+import numpy as np
+
+# The length of the calibration period, which will assign the "zero" values [ms]
+calibration_length = 5000 # [ms]
+
+# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
+link1ZeroAngle = 0
+link2ZeroAngle = 0
+
+# Lists of the target angles for each link, the latest angle is the last element in the list
+link1TargetAngles = []
+link2TargetAngles = []
 
 def elbowImuCallback(data):
 	"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -32,10 +44,20 @@ def shoulderImuCallback(data):
 	pass
 
 def imuListener():
-	rospy.init_node('imuListener', anonymous=True)
 	rospy.Subscriber("elbow_imu", Vectornav, elbowImuCallback)
 	rospy.Subscriber("shoulder_imu", Vectornav, shoulderImuCallback)
+
+def imuPublisher():
+	rospy.Publisher('arduino_command', ArduinoCommand, queue_size=10)
+
+def main():
+	rospy.init_node('imuAnalyzer', anonymous=True)
+	imuListener()
+	imuPublisher()
 	rospy.spin()
 
 if __name__ == '__main__':
-	imuListener()
+  try:
+    main()
+  except rospy.ROSInterruptException:
+    pass
