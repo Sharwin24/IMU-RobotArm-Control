@@ -2,7 +2,8 @@
 #include <RobotArm.hpp>
 #include <Utils.h>
 #include <ros.h>
-#include <msg/ArduinoCommand.msg>
+#include <std_msgs/String.h>
+#include <string.h>
 
 /**
  * @brief Robot Arm object that supports forward and inverse kinematics
@@ -10,14 +11,27 @@
  */
 RobotArm robotArm = RobotArm();
 
-ros::NodeHandle nodeHandler;
-ros::Subscriber<msg::ArduinoCommand> sub("arduino_command", &arduinoCommandCallback);
-
-void arduinoCommandCallback(const msg::ArduinoCommand& msg) {
-  writeInfo("Received - [" + String(msg.link1AngleDeg) + ", " + String(msg.link2AngleDeg) + ", " + String(msg.link3AngleDeg) + "]");
+/**
+ * @brief Callback function for the arduino_command topic with
+ *        the given message as a String
+ *
+ * @param msg the arduino command, contained in a string with the format:
+ *            "link1AngleDeg,link2AngleDeg,link3AngleDeg"
+ */
+void arduinoCommandCallback(const std_msgs::String& msg) {
+  String input = msg.data;
+  writeInfo("Received -> " + input);
   if (robotArm.isMoving()) { return; }
-  robotArm.forwardKinematics(msg.link1AngleDeg, msg.link2AngleDeg, msg.link3AngleDeg);
+  float link1AngleDeg = input.substring(0, input.indexOf(',')).toFloat();
+  float link2AngleDeg = input.substring(input.indexOf(',') + 1, input.lastIndexOf(',')).toFloat();
+  float link3AngleDeg = input.substring(input.lastIndexOf(',') + 1, input.length() - 1).toFloat();
+  if (robotArm.atConfiguration(link1AngleDeg, link2AngleDeg, link3AngleDeg)) { return; }
+  robotArm.forwardKinematics(link1AngleDeg, link2AngleDeg, link3AngleDeg);
 }
+
+// Ros objects
+ros::NodeHandle nodeHandler;
+ros::Subscriber<std_msgs::String> sub("arduino_command", &arduinoCommandCallback);
 
 
 void serialReactions() {
@@ -44,15 +58,13 @@ void serialReactions() {
     float targetY = Serial.parseFloat();
     writeInfo("IK [" + String(targetX) + ", " + String(targetY) + "]");
     robotArm.inverseKinematics(targetX, targetY);
-  } else if (input.equals("test")) {
-    test();
   } else {
     writeError("Invalid Command");
   }
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   robotArm.init();
   robotArm.calibrate();
 
@@ -63,5 +75,5 @@ void setup() {
 void loop() {
   //serialReactions();
   nodeHandler.spinOnce();
-  delay(1);
+  delay(50);
 }

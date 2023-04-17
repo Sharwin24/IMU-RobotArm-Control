@@ -14,6 +14,10 @@ public:
 	void forwardKinematics(float targetAngle1, float targetAngle2, float targetAngle3);
 	void inverseKinematics(float targetX, float targetY);
 
+	// Movement status
+	bool atConfiguration(float angle1, float angle2, float angle3);
+	bool isMoving();
+
 	// Sync Movement operations (blocking)
 	void linkToAngle(int linkNumber, float targetAngle);
 

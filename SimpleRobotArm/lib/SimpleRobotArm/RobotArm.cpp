@@ -1,5 +1,6 @@
 #include "RobotArm.hpp"
 #include "Constants.hpp"
+#include "StepperMotor.hpp"
 #include <Arduino.h>
 #include <Utils.h>
 
@@ -42,8 +43,12 @@ void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float t
 		this->link2.update();
 		this->link3.update();
 	}
+	// Update final angles
+	this->link1.updateAngle();
+	this->link2.updateAngle();
+	this->link3.updateAngle();
+	writeInfo("Movement complete at ");
 	writeInfo("L1: " + String(this->link1.getCurrent()) + " L2: " + String(this->link2.getCurrent()) + " L3: " + String(this->link3.getCurrent()));
-	writeInfo("Movement complete");
 }
 
 /**
@@ -87,4 +92,17 @@ void RobotArm::linkToAngle(int linkNumber, float targetAngle) {
 	default:
 		break;
 	}
+}
+
+
+bool RobotArm::atConfiguration(float angle1, float angle2, float angle3) {
+	return this->link1.atAngle(angle1)
+		&& this->link2.atAngle(angle2)
+		&& this->link3.atAngle(angle3);
+}
+
+bool RobotArm::isMoving() {
+	return this->link1.isMoving()
+		|| this->link2.isMoving()
+		|| this->link3.isMoving();
 }

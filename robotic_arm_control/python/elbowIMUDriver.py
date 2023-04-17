@@ -56,7 +56,7 @@ def serial_port_setup(default_port='/dev/pts/5', default_baud=115200, default_sa
     SERIAL_PORT = rospy.get_param('~port', default_port)
     BAUD_RATE = rospy.get_param('~baud', default_baud)
     SAMPLING_RATE = rospy.get_param('~sampling_rate', default_sampling_rate)
-    print(f'Starting IMU Driver: \nSerial Port: {SERIAL_PORT}\nBaud Rate: {BAUD_RATE}\nSampling Rate: {SAMPLING_RATE}')
+    print(f'Starting Elbow IMU Driver: \nSerial Port: {SERIAL_PORT}\nBaud Rate: {BAUD_RATE}\nSampling Rate: {SAMPLING_RATE}')
     port = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=SAMPLING_RATE / 2.0)
     configure_vectornav(port)
     return port

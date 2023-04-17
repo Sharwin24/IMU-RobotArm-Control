@@ -56,7 +56,6 @@ roslaunch_add_file_check(launch)
 add_message_files(
   FILES
   Vectornav.msg
-  ArduinoCommand.msg
 )
 
 # Generate services in the 'srv' folder

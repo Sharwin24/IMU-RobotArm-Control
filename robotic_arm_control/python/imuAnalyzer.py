@@ -6,9 +6,10 @@ each link of the robot. It then publishes the angles to the robot controller via
 """
 
 import rospy
-from robotic_arm_control.msg import ArduinoCommand, Vectornav
+from robotic_arm_control.msg import Vectornav
+from std_msgs.msg import String
 import numpy as np
-from typing import Tuple
+import sys
 
 # The length of the calibration period, which will assign the "zero" values [ms]
 calibration_length = 5000 # [ms]
@@ -24,7 +25,7 @@ class IMUPubSub:
 		rospy.init_node('imuAnalyzer', anonymous=True)
 		self.elbowIMUSub = rospy.Subscriber("elbow_imu", Vectornav, self.elbowImuCallback)
 		self.shoulderIMUSub = rospy.Subscriber("shoulder_imu", Vectornav, self.shoulderImuCallback)
-		self.arduinoCmdPub = rospy.Publisher('arduino_command', ArduinoCommand, queue_size=5)
+		self.arduinoCmdPub = rospy.Publisher('arduino_command', String, queue_size=5)
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -35,7 +36,8 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-	pass
+		rospy.logdebug("Elbow IMU data received")
+		self.publishToArduino("0,0,0")
 
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
@@ -46,25 +48,22 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-	pass
+		rospy.logdebug("Shoulder IMU data received")
+		self.publishToArduino("1,1,1")
 
-	def publishToArduino(self, linkAngles: Tuple[float]):
+	def publishToArduino(self, linkAngles: String):
 		"""Given the angles for each link as a tuple, this function publishes the angles to the
 			robot controller (Arduino) via rosserial to the topic "arduino_command" using the
 			ArduinoCommand message type via the arduinoCmdPub publisher.
 
 		Args:
-				linkAngles (Tuple[float]): A tuple of the angles for each link [link1, link2, link3] in degrees
+				linkAngles (String): A string of the angles for each link in degrees with the format
+					"link1Angle,link2Angle,link3Angle"
 		"""
-		# Validate input Tuple, must be length 3 and contain floats
-		if len(linkAngles) != 3:
-			raise ValueError("linkAngles must be a tuple of length 3")
-		elif not isinstance(linkAngles[0], float) or not isinstance(linkAngles[1], float) or not isinstance(linkAngles[2], float):
-			raise ValueError("linkAngles must be a tuple of floats")
-		arduinoCmd = ArduinoCommand()
-		arduinoCmd.link1Angle = linkAngles[0]
-		arduinoCmd.link2Angle = linkAngles[1]
-		arduinoCmd.link3Angle = linkAngles[2]
+		anglesList = linkAngles.split(",")
+		arduinoCmd = String()
+		arduinoCmd.data = f"{anglesList[0]},{anglesList[1]},{anglesList[2]}"
+		rospy.logdebug(f"Publishing to Arduino: {arduinoCmd.data}")
 		self.arduinoCmdPub.publish(arduinoCmd)
 
 def main():
@@ -73,6 +72,8 @@ def main():
 	rospy.spin()
 
 if __name__ == '__main__':
+	# args = rospy.myargv(argv=sys.argv)
+	# arduinoPort = args[1]
 	try:
 		main()
 	except rospy.ROSInterruptException:

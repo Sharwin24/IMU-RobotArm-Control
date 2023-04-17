@@ -114,8 +114,8 @@ void StepperMotor::setTargetAngle(float targetAngleDegrees) {
  * @brief Sets the current angle based on the current step
  *
  */
-void StepperMotor::setAngle() {
-	this->currentAngle = STEPS_PER_REV * this->current / (360.0f * this->outputGearRatio);
+void StepperMotor::updateAngle() {
+	this->currentAngle = (this->current % STEPS_PER_REV) * (360.0f / STEPS_PER_REV);
 }
 
 /**
@@ -127,6 +127,16 @@ bool StepperMotor::isMoving() {
 	return this->outputGearRatio == 1.0f ?
 		this->current != this->target :
 		abs(this->current - this->target) >= this->outputGearRatio;
+}
+
+/**
+ * @brief Determines if the motor is at the given angle within the given tolerance
+ *
+ * @param angle the angle to check [degrees]
+ * @param tolerance the tolerance [degrees]
+ */
+bool StepperMotor::atAngle(float angle, float tolerance) {
+	return abs(this->currentAngle - angle) <= tolerance;
 }
 
 /**

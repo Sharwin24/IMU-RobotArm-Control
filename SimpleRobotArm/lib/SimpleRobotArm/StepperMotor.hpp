@@ -25,6 +25,9 @@ public:
 
 	// State Methods
 	bool isMoving();
+	bool atAngle(float angleDeg, float tolerance = 0.1f);
+	void updateAngle();
+
 
 	// Movement Methods
 	void stepMotor();
@@ -49,7 +52,6 @@ public:
 	float currentSpeed;
 	long currentDelay;
 	// Private methods
-	void setAngle();
 	int degreeToSteps(float targetAngleDegrees);
 	long getDelayFromSpeed(float s);
 };
