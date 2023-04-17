@@ -30,13 +30,14 @@ void RobotArm::calibrate() {
  * @param targetAngle3 the target angle of link 3 [deg]
  */
 void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float targetAngle3) {
+	this->isMoving = true;
 	// Set all target angles
 	this->link1.setTargetAngle(targetAngle1);
 	this->link2.setTargetAngle(targetAngle2);
 	this->link3.setTargetAngle(targetAngle3);
-	writeInfo("L1 target: " + String(this->link1.getTarget()) + " speed: " + String(this->link1.getSpeed()));
-	writeInfo("L2 target: " + String(this->link2.getTarget()) + " speed: " + String(this->link2.getSpeed()));
-	writeInfo("L3 target: " + String(this->link3.getTarget()) + " speed: " + String(this->link3.getSpeed()));
+	writeDebug("L1 target -> " + String(this->link1.getTarget()) + " speed -> " + String(this->link1.getSpeed()));
+	writeDebug("L2 target -> " + String(this->link2.getTarget()) + " speed -> " + String(this->link2.getSpeed()));
+	writeDebug("L3 target -> " + String(this->link3.getTarget()) + " speed -> " + String(this->link3.getSpeed()));
 	// Update all links until they are at their target
 	while (this->link1.isMoving() || this->link2.isMoving() || this->link3.isMoving()) {
 		this->link1.update();
@@ -47,8 +48,9 @@ void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float t
 	this->link1.updateAngle();
 	this->link2.updateAngle();
 	this->link3.updateAngle();
-	writeInfo("Movement complete at ");
-	writeInfo("L1: " + String(this->link1.getCurrent()) + " L2: " + String(this->link2.getCurrent()) + " L3: " + String(this->link3.getCurrent()));
+	writeDebug("Movement complete at ");
+	writeDebug("L1 -> " + String(this->link1.getCurrent()) + " L2 -> " + String(this->link2.getCurrent()) + " L3 -> " + String(this->link3.getCurrent()));
+	this->isMoving = false;
 }
 
 /**
@@ -94,15 +96,10 @@ void RobotArm::linkToAngle(int linkNumber, float targetAngle) {
 	}
 }
 
-
 bool RobotArm::atConfiguration(float angle1, float angle2, float angle3) {
 	return this->link1.atAngle(angle1)
 		&& this->link2.atAngle(angle2)
 		&& this->link3.atAngle(angle3);
 }
 
-bool RobotArm::isMoving() {
-	return this->link1.isMoving()
-		|| this->link2.isMoving()
-		|| this->link3.isMoving();
-}
+bool RobotArm::isMoving() { return this->isMoving; }

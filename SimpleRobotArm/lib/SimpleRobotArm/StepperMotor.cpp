@@ -26,22 +26,6 @@ void StepperMotor::init() {
 }
 
 void StepperMotor::calibrate() {
-	// // Step until limit switch is hit
-	// writeInfo("Calibrating...");
-	// setDirection(true);
-	// float speed = this->currentSpeed;
-	// setSpeed(this->currentSpeed / 6.0f);
-	// int startingLimit = digitalRead(this->calibrationPin);
-	// while (true) {
-	// 	int limitSwitch = digitalRead(this->calibrationPin);
-	// 	if (limitSwitch != startingLimit) {
-	// 		break;
-	// 	}
-	// 	stepMotor();
-	// }
-	// writeInfo("Calibration Complete");
-	// setSpeed(speed);
-	// // Set current to 0
 	this->current = 0;
 	this->currentAngle = 0.0f;
 }
@@ -105,7 +89,7 @@ void StepperMotor::setTarget(int targetStep) {
  */
 void StepperMotor::setTargetAngle(float targetAngleDegrees) {
 	int steps = degreeToSteps(targetAngleDegrees);
-	writeInfo("setTargetAngle [deg,steps] -> Link " + String(this->linkNumber) +
+	writeDebug("setTargetAngle [deg,steps] -> Link " + String(this->linkNumber) +
 		" [ " + String(targetAngleDegrees) + ", " + String(steps) + " ]");
 	setTarget(steps);
 }

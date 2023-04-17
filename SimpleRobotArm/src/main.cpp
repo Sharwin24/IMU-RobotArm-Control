@@ -19,9 +19,8 @@ RobotArm robotArm = RobotArm();
  *            "link1AngleDeg,link2AngleDeg,link3AngleDeg"
  */
 void arduinoCommandCallback(const std_msgs::String& msg) {
-  writeDebug("Callback called");
   String input = msg.data;
-  writeInfo("Received -> " + input);
+  writeDebug("Received -> " + input);
   if (robotArm.isMoving()) { return; }
   float link1AngleDeg = input.substring(0, input.indexOf(',')).toFloat();
   float link2AngleDeg = input.substring(input.indexOf(',') + 1, input.lastIndexOf(',')).toFloat();
@@ -41,13 +40,10 @@ void serialReactions() {
   String input = Serial.readStringUntil('\n');
   writeInfo("Received - " + input);
   if (input.equals("fk")) {
-    writeInfo("Waiting for angles...");
     waitForSerialInput();
     float targetAngle1 = Serial.parseFloat();
-    writeInfo("Angle 1: " + String(targetAngle1));
     waitForSerialInput();
     float targetAngle2 = Serial.parseFloat();
-    writeInfo("Angle 2: " + String(targetAngle2));
     waitForSerialInput();
     float targetAngle3 = Serial.parseFloat();
     writeInfo("FK [" + String(targetAngle1) + ", " + String(targetAngle2) + ", " + String(targetAngle3) + "]");

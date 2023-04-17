@@ -22,6 +22,7 @@ public:
 	void linkToAngle(int linkNumber, float targetAngle);
 
 private:
+	bool isMoving = false;
 	StepperMotor link1;// = StepperMotor(LINK_1_STEP_PIN, LINK_1_DIR_PIN, 5.0f);
 	StepperMotor link2;// = StepperMotor(LINK_2_STEP_PIN, LINK_2_DIR_PIN, 5.0f);
 	StepperMotor link3;// = StepperMotor(LINK_3_STEP_PIN, LINK_3_DIR_PIN, 1.0f);

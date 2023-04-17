@@ -61,6 +61,8 @@ class Arduino:
                 self.logger.warning("Invalid Input: {}".format(input))
                 return
             command, value = input.split(':')
+            if command == "DEBUG":
+                return
             self.logger.debug("Command: {} | Value: {}".format(command, value))
             self.read_handler(command, value)
 

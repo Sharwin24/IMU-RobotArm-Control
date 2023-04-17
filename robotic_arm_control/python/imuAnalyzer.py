@@ -25,11 +25,12 @@ zeroAngles = {1: 0, 2: 0, 3: 0} # [degrees]
 targetAngles = {1: [], 2: [], 3: []} # [degrees]
 
 class IMUPubSub:
-	def __init__(self):
+	def __init__(self, arduinoPort, arduinoBaud):
 		self.elbowIMUSub = rospy.Subscriber("/elbow_imu", Vectornav, self.elbowImuCallback)
 		self.shoulderIMUSub = rospy.Subscriber("/shoulder_imu", Vectornav, self.shoulderImuCallback)
 		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
 		rospy.loginfo("IMU PubSub initialized")
+		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -40,8 +41,7 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# rospy.logdebug("Elbow IMU data received")
-		self.publishToArduino("0,3,0")
+		self.robotarm.forwardKinematics(45,30,15)
 
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
@@ -52,8 +52,7 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# rospy.logdebug("Shoulder IMU data received")
-		self.publishToArduino("1,1,1")
+		pass
 
 	def publishToArduino(self, linkAngles: String):
 		"""Given the angles for each link as a tuple, this function publishes the angles to the
@@ -76,10 +75,7 @@ if __name__ == '__main__':
 	# arduinoPort = args[1]
 	try:
 		rospy.init_node('imuAnalyzer', anonymous=True)
-		robotarm = RobotArm("/dev/ttyACM0")
-		arduinoPort = "/dev/ttyACM0"
-		ard = rosserial_python.SerialClient(arduinoPort, baud=9600)
-		IMUAnalyzer = IMUPubSub()
+		IMUAnalyzer = IMUPubSub(arduinoPort="/dev/ttyACM0", arduinoBaud=9600)
 		rospy.spin()
 	except rospy.ROSInterruptException:
 		print("ROS Interrupt Exception, exiting...")
