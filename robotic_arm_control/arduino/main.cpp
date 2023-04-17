@@ -14,6 +14,7 @@ ros::NodeHandle nodeHandler;
 ros::Subscriber<msg::ArduinoCommand> sub("arduino_command", &arduinoCommandCallback);
 
 void arduinoCommandCallback(const msg::ArduinoCommand& msg) {
+  writeInfo("Received - [" + String(msg.link1AngleDeg) + ", " + String(msg.link2AngleDeg) + ", " + String(msg.link3AngleDeg) + "]");
   if (robotArm.isMoving()) { return; }
   robotArm.forwardKinematics(msg.link1AngleDeg, msg.link2AngleDeg, msg.link3AngleDeg);
 }
