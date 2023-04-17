@@ -42,7 +42,7 @@ def serial_port_setup(default_port='/dev/pts/5', default_baud=115200, default_sa
     SERIAL_PORT = rospy.get_param('~port', default_port)
     BAUD_RATE = rospy.get_param('~baud', default_baud)
     SAMPLING_RATE = rospy.get_param('~sampling_rate', default_sampling_rate)
-    print(f'Starting Shoulder IMU Driver: \nSerial Port: {SERIAL_PORT}\nBaud Rate: {BAUD_RATE}\nSampling Rate: {SAMPLING_RATE}')
+    print(f'Starting Shoulder IMU Driver: \n\tSerial Port: {SERIAL_PORT}\n\tBaud Rate: {BAUD_RATE}\n\tSampling Rate: {SAMPLING_RATE}')
     port = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=SAMPLING_RATE / 2.0)
     configure_vectornav(port)
     return port
@@ -173,16 +173,17 @@ def driver_publish(serialPort: serial.Serial, driverName: str, topicName: str, m
         if msg is None or msg == "":
             rospy.logwarn('Unable to parse message')
         else:
-            rospy.loginfo(msg)
+            # rospy.loginfo(msg)
             ros_publisher.publish(msg)
         rate.sleep()
 
 if __name__ == '__main__':
     args = rospy.myargv(argv=sys.argv)
     serialPort = serial_port_setup(args[1])
-    topic = "shoulder_imu"
+    topic = "/shoulder_imu"
     try:
-        driver_publish(serialPort, driverName='imu_driver', topicName=topic, msgType=Vectornav)
+        driver_publish(serialPort, driverName='shoulderIMUDriver',
+                       topicName=topic, msgType=Vectornav)
     except rospy.ROSInterruptException:
         serialPort.close()
         print("ROS Interrupted, closing serial port")

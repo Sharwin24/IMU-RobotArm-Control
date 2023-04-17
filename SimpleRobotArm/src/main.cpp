@@ -19,6 +19,7 @@ RobotArm robotArm = RobotArm();
  *            "link1AngleDeg,link2AngleDeg,link3AngleDeg"
  */
 void arduinoCommandCallback(const std_msgs::String& msg) {
+  writeDebug("Callback called");
   String input = msg.data;
   writeInfo("Received -> " + input);
   if (robotArm.isMoving()) { return; }
@@ -30,8 +31,8 @@ void arduinoCommandCallback(const std_msgs::String& msg) {
 }
 
 // Ros objects
-ros::NodeHandle nodeHandler;
-ros::Subscriber<std_msgs::String> sub("arduino_command", &arduinoCommandCallback);
+// ros::NodeHandle nodeHandler;
+// ros::Subscriber<std_msgs::String> sub("/arduino_command", &arduinoCommandCallback);
 
 
 void serialReactions() {
@@ -58,22 +59,27 @@ void serialReactions() {
     float targetY = Serial.parseFloat();
     writeInfo("IK [" + String(targetX) + ", " + String(targetY) + "]");
     robotArm.inverseKinematics(targetX, targetY);
+  } else if (input.equals("on")) {
+    digitalWrite(LED_BUILTIN, HIGH);
+  } else if (input.equals("off")) {
+    digitalWrite(LED_BUILTIN, LOW);
   } else {
     writeError("Invalid Command");
   }
 }
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   robotArm.init();
   robotArm.calibrate();
+  pinMode(LED_BUILTIN, OUTPUT);
 
-  nodeHandler.initNode();
-  // nodeHandler.subscribe();
+  // nodeHandler.initNode();
+  // nodeHandler.subscribe(sub);
 }
 
 void loop() {
-  //serialReactions();
-  nodeHandler.spinOnce();
-  delay(50);
+  serialReactions();
+  // nodeHandler.spinOnce();
+  // delay(100);
 }

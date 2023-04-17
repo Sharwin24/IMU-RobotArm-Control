@@ -10,6 +10,10 @@ from robotic_arm_control.msg import Vectornav
 from std_msgs.msg import String
 import numpy as np
 import sys
+from RobotArm import RobotArm
+
+# use rosserial
+import rosserial_python
 
 # The length of the calibration period, which will assign the "zero" values [ms]
 calibration_length = 5000 # [ms]
@@ -22,10 +26,10 @@ targetAngles = {1: [], 2: [], 3: []} # [degrees]
 
 class IMUPubSub:
 	def __init__(self):
-		rospy.init_node('imuAnalyzer', anonymous=True)
-		self.elbowIMUSub = rospy.Subscriber("elbow_imu", Vectornav, self.elbowImuCallback)
-		self.shoulderIMUSub = rospy.Subscriber("shoulder_imu", Vectornav, self.shoulderImuCallback)
-		self.arduinoCmdPub = rospy.Publisher('arduino_command', String, queue_size=5)
+		self.elbowIMUSub = rospy.Subscriber("/elbow_imu", Vectornav, self.elbowImuCallback)
+		self.shoulderIMUSub = rospy.Subscriber("/shoulder_imu", Vectornav, self.shoulderImuCallback)
+		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
+		rospy.loginfo("IMU PubSub initialized")
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -36,8 +40,8 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		rospy.logdebug("Elbow IMU data received")
-		self.publishToArduino("0,0,0")
+		# rospy.logdebug("Elbow IMU data received")
+		self.publishToArduino("0,3,0")
 
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
@@ -48,7 +52,7 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		rospy.logdebug("Shoulder IMU data received")
+		# rospy.logdebug("Shoulder IMU data received")
 		self.publishToArduino("1,1,1")
 
 	def publishToArduino(self, linkAngles: String):
@@ -66,15 +70,16 @@ class IMUPubSub:
 		rospy.logdebug(f"Publishing to Arduino: {arduinoCmd.data}")
 		self.arduinoCmdPub.publish(arduinoCmd)
 
-def main():
-	"""The main function of the IMUAnalyzer node"""
-	IMUAnalyzer = IMUPubSub()
-	rospy.spin()
 
 if __name__ == '__main__':
 	# args = rospy.myargv(argv=sys.argv)
 	# arduinoPort = args[1]
 	try:
-		main()
+		rospy.init_node('imuAnalyzer', anonymous=True)
+		robotarm = RobotArm("/dev/ttyACM0")
+		arduinoPort = "/dev/ttyACM0"
+		ard = rosserial_python.SerialClient(arduinoPort, baud=9600)
+		IMUAnalyzer = IMUPubSub()
+		rospy.spin()
 	except rospy.ROSInterruptException:
 		print("ROS Interrupt Exception, exiting...")
