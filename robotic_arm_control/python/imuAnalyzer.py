@@ -65,6 +65,7 @@ class IMUPubSub:
 		self.link1TargetAngleBuffer = IMUBuffer()
 		self.link2TargetAngleBuffer = IMUBuffer()
 		self.link3TargetAngleBuffer = IMUBuffer()
+		self.runningRobotControl = False
 
 	def calibrateZeroAngles(self, calibration_length: float = 2):
 		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
@@ -111,6 +112,15 @@ class IMUPubSub:
 				data (Vectornav): The IMU data
 		"""
 		pass
+	
+	def validateTargetAngle(self, linkNumber: int, angle: float):
+		"""Validates the given target angle for the given link number
+
+		Args:
+				linkNumber (int): the link number
+				angle (float): the target angle [degrees]
+		"""
+		pass
 
 	def runRobotArmControl(self):
 		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
@@ -122,7 +132,21 @@ class IMUPubSub:
 			 - The target angle is close to the current angle
 			 - The robot arm is currently moving
 		"""
-		pass
+		self.runRobotArmControl = True
+		while(self.runRobotArmControl):
+			# Get the latest target angles from the IMU buffers
+			link1TargetAngle = self.link1TargetAngleBuffer.getLatest()
+			link2TargetAngle = self.link2TargetAngleBuffer.getLatest()
+			link3TargetAngle = self.link3TargetAngleBuffer.getLatest()
+			# Validate the target angles
+			self.validateTargetAngle(1, link1TargetAngle)
+			self.validateTargetAngle(2, link2TargetAngle)
+			self.validateTargetAngle(3, link3TargetAngle)
+			# Send the target angles to the Arduino
+			self.robotarm.forwardKinematics(link1TargetAngle, link2TargetAngle, link3TargetAngle)
+			# Yield to other tasks for a short (but not too short) period of time
+			rospy.sleep(0.1)  # [sec]
+	
 
 
 if __name__ == '__main__':
