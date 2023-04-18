@@ -12,17 +12,9 @@ import numpy as np
 import sys
 from RobotArm import RobotArm
 
-# use rosserial
-import rosserial_python
-
 # The length of the calibration period, which will assign the "zero" values [ms]
 calibration_length = 5000 # [ms]
 
-# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
-zeroAngles = {1: 0, 2: 0, 3: 0} # [degrees]
-
-# Lists of the target angles for each link, the latest angle is the last element in the list
-targetAngles = {1: [], 2: [], 3: []} # [degrees]
 
 class IMUPubSub:
 	def __init__(self, arduinoPort, arduinoBaud):
@@ -31,6 +23,15 @@ class IMUPubSub:
 		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
+  	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
+		zeroAngles = {1: 0, 2: 0, 3: 0}  # [degrees]
+		# Lists of the target angles for each link, the latest angle is the last element in the list
+		targetAngles = {1: [], 2: [], 3: []}  # [degrees]
+  
+	def calibrateZeroAngles(self, calibration_length):
+		"""Calibrates the zero angles for each link by averaging the angles over a period of time.
+  	"""
+		pass
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -41,7 +42,8 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		self.robotarm.forwardKinematics(45,30,15)
+		# self.robotarm.forwardKinematics(45,30,15)
+		pass
 
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
