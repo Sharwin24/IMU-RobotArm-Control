@@ -11,6 +11,41 @@ from std_msgs.msg import String
 import numpy as np
 import sys
 from RobotArm import RobotArm
+from typing import List
+
+
+class IMUBuffer:
+	"""Class that holds a Buffer for the IMU Data. The IMU Data is held in this buffer which only contains
+		 up to a certain number of data points. The buffer is updated externally but the length of the buffer
+	   is maintained internally.
+    
+		 The data for this buffer is a list of floats representing IMU Angles in degrees.
+    
+	Attributes:	
+			size (int): The size of the buffer, which is the maximum number of data points
+			buffer (List[float]): The buffer of IMU data
+	"""
+	def __init__(self, size: int = 50):
+		self.size = size
+		self.buffer = []
+  
+	def update(self, data: float):
+		"""Updates the buffer with a new data point.
+		"""
+		self.buffer.append(data)
+		if len(self.buffer) > self.size:
+			self.buffer.pop(0)
+
+	def getBuffer(self) -> List[float]:
+		"""Returns the buffer.
+		"""
+		return self.buffer
+
+	def getAverage(self) -> float:
+		return np.mean(self.buffer)
+
+	def getLatest(self) -> float:
+		return self.buffer[-1]
 
 
 class IMUPubSub:
@@ -21,27 +56,43 @@ class IMUPubSub:
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
-		self.zeroAngles = {1: 0, 2: 0, 3: 0}  # [degrees]
-		# Lists of the target angles for each link, the latest angle is the last element in the list
-		self.targetAngles = {1: [], 2: [], 3: []}  # [degrees]
-  	# The length of the calibration period, which will assign the "zero" values [ms]
-		self.calibration_length = 5000  # [ms]
+		self.zeroAngles: dict[int, float] = {1: 0, 2: 0, 3: 0}  # [degrees]
+		# Buffers for each link's target angle so we can store a list of angles
+		self.link1TargetAngleBuffer = IMUBuffer()
+		self.link2TargetAngleBuffer = IMUBuffer()
+		self.link3TargetAngleBuffer = IMUBuffer()
   
-	def calibrateZeroAngles(self):
-		"""Calibrates the zero angles for each link by averaging the angles over a period of time.
+	def calibrateZeroAngles(self, calibration_length: float = 2):
+		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
+
+		Args:
+				calibration_length (float, optional): The length of time to calibrate the zero angles [sec], defaults to 2
   	"""
-		pass
+		# Starts a timer to keep track of the calibration period and initializes the lists of angles
+		# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
+		rospy.loginfo("Calibrating zero angles...")
+		start_time = rospy.get_time()
+		while rospy.get_time() - start_time < calibration_length:
+			# While we are calibrating, yield to other tasks
+			rospy.sleep(0.01) # [sec]
+		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
+		self.zeroAngles[1] = self.link1TargetAngleBuffer.getAverage()
+		self.zeroAngles[2] = self.link2TargetAngleBuffer.getAverage()
+		self.zeroAngles[3] = self.link3TargetAngleBuffer.getAverage()
+		rospy.loginfo("Calibration complete!")
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
 			Each link should have a "zero" angle which is calibrated on initialization or during
 			the first moments of operation. The angles should be relative to the "zero" angle,
 			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
+   
+			This function should only update the IMUBuffer for link 2.
+			The elbow IMU rotates on the Z axis.
 
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# self.robotarm.forwardKinematics(45,30,15)
 		pass
 
 	def shoulderImuCallback(self, data):
@@ -49,6 +100,9 @@ class IMUPubSub:
 			Each link should have a "zero" angle which is calibrated on initialization or during
 			the first moments of operation. The angles should be relative to the "zero" angle,
 			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
+   
+			This function should only update the IMUBuffer for link 1.
+			The shoulder IMU rotates on the Z axis.
 
 		Args:
 				data (Vectornav): The IMU data
@@ -77,6 +131,7 @@ if __name__ == '__main__':
 	try:
 		rospy.init_node('imuAnalyzer', anonymous=True)
 		IMUAnalyzer = IMUPubSub(arduinoPort="/dev/ttyACM0", arduinoBaud=9600)
+		IMUAnalyzer.calibrateZeroAngles()
 		rospy.spin()
 	except rospy.ROSInterruptException:
 		print("ROS Interrupt Exception, exiting...")
