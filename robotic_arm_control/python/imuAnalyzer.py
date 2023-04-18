@@ -67,16 +67,15 @@ class IMUPubSub:
 		self.link3TargetAngleBuffer = IMUBuffer()
 
 	def calibrateZeroAngles(self, calibration_length: float = 2):
-	"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
-
+		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
 		Args:
-				calibration_length (float, optional): The length of time to calibrate the zero angles [sec], defaults to 2
-  	"""
-	# Starts a timer to keep track of the calibration period and initializes the lists of angles
-	# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
-	rospy.loginfo("Calibrating zero angles...")
-	start_time = rospy.get_time()
-	while rospy.get_time() - start_time < calibration_length:
+			calibration_length (float, optional): The length of time to calibrate the zero angles [sec], defaults to 2
+		"""
+		# Starts a timer to keep track of the calibration period and initializes the lists of angles
+		# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
+		rospy.loginfo("Calibrating zero angles...")
+		start_time = rospy.get_time()
+		while rospy.get_time() - start_time < calibration_length:
 			# While we are calibrating, yield to other tasks
 			rospy.sleep(0.01)  # [sec]
 		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
