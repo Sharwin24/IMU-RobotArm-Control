@@ -109,20 +109,17 @@ class IMUPubSub:
 		"""
 		pass
 
-	def publishToArduino(self, linkAngles: String):
-		"""Given the angles for each link as a tuple, this function publishes the angles to the
-			robot controller (Arduino) via rosserial to the topic "arduino_command" using the
-			ArduinoCommand message type via the arduinoCmdPub publisher.
-
-		Args:
-				linkAngles (String): A string of the angles for each link in degrees with the format
-					"link1Angle,link2Angle,link3Angle"
+	def runRobotArmControl(self):
+		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
+			The Robot Arm Control loop obtains the latest target angles from the IMU buffers and then 
+			sends the commands to the robot controller (Arduino) via serial.
+   
+			This control loop should also validate the values as much as possible before sending them to the Arduino.
+			The Arduino also runs validation which will reject commands when:
+			 - The target angle is close to the current angle
+			 - The robot arm is currently moving
 		"""
-		anglesList = linkAngles.split(",")
-		arduinoCmd = String()
-		arduinoCmd.data = f"{anglesList[0]},{anglesList[1]},{anglesList[2]}"
-		rospy.logdebug(f"Publishing to Arduino: {arduinoCmd.data}")
-		self.arduinoCmdPub.publish(arduinoCmd)
+		pass
 
 
 if __name__ == '__main__':
