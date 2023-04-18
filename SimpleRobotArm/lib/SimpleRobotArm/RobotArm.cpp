@@ -22,6 +22,22 @@ void RobotArm::calibrate() {
 	this->link3.calibrate();
 }
 
+void RobotArm::setSpeed(int linkNumber, float speed) {
+	switch (linkNumber) {
+	case 1:
+		this->link1.setSpeed(speed);
+		break;
+	case 2:
+		this->link2.setSpeed(speed);
+		break;
+	case 3:
+		this->link3.setSpeed(speed);
+		break;
+	default:
+		break;
+	}
+}
+
 /**
  * @brief Moves all links to their target angles synchronously
  *

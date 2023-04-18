@@ -48,13 +48,13 @@ void serialReactions() {
     float targetAngle3 = Serial.parseFloat();
     writeInfo("FK [" + String(targetAngle1) + ", " + String(targetAngle2) + ", " + String(targetAngle3) + "]");
     robotArm.forwardKinematics(targetAngle1, targetAngle2, targetAngle3);
-  } else if (input.equals("ik")) {
+  } else if (input.equals("setSpeed")) {
     waitForSerialInput();
-    float targetX = Serial.parseFloat();
+    int linkNumber = Serial.parseInt();
     waitForSerialInput();
-    float targetY = Serial.parseFloat();
-    writeInfo("IK [" + String(targetX) + ", " + String(targetY) + "]");
-    robotArm.inverseKinematics(targetX, targetY);
+    float newSpeed = Serial.parseFloat();
+    writeInfo("setSpeed [ Link " + String(linkNumber) + ", " + String(newSpeed) + " steps/sec ]");
+    robotArm.setSpeed(linkNumber, newSpeed);
   } else if (input.equals("on")) {
     digitalWrite(LED_BUILTIN, HIGH);
   } else if (input.equals("off")) {

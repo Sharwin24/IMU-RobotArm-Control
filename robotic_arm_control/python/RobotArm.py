@@ -12,3 +12,6 @@ class RobotArm(Arduino):
     
 	def forwardKinematics(self, link1Angle, link2Angle, link3Angle):
 		self.sendCommand("fk", [link1Angle, link2Angle, link3Angle])
+	
+	def setSpeed(self, linkNumber, speed):
+		self.sendCommand("speed", [linkNumber, speed])

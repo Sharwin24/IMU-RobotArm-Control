@@ -10,6 +10,8 @@ public:
 	void init();
 	void calibrate();
 
+	void setSpeed(int linkNumber, float speed);
+
 	// Async Movement operations (non-blocking)
 	void forwardKinematics(float targetAngle1, float targetAngle2, float targetAngle3);
 	void inverseKinematics(float targetX, float targetY);
