@@ -113,12 +113,20 @@ class IMUPubSub:
 		"""
 		pass
 	
-	def validateTargetAngle(self, linkNumber: int, angle: float):
+	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
 		"""Validates the given target angle for the given link number
 
 		Args:
 				linkNumber (int): the link number
 				angle (float): the target angle [degrees]
+		"""
+		pass
+
+	def shouldContinueControl(self) -> bool:
+		"""Determines if the control loop should continue running. This is used to stop the control loop.
+
+		Returns:
+				bool: True if the control loop should continue running, False otherwise
 		"""
 		pass
 
@@ -133,8 +141,8 @@ class IMUPubSub:
 			 - The robot arm is currently moving
 		"""
 		self.runRobotArmControl = True
-		while(self.runRobotArmControl):
-			# Get the latest target angles from the IMU buffers
+		while (self.runRobotArmControl):
+    	# Get the latest target angles from the IMU buffers
 			link1TargetAngle = self.link1TargetAngleBuffer.getLatest()
 			link2TargetAngle = self.link2TargetAngleBuffer.getLatest()
 			link3TargetAngle = self.link3TargetAngleBuffer.getLatest()
@@ -144,9 +152,9 @@ class IMUPubSub:
 			self.validateTargetAngle(3, link3TargetAngle)
 			# Send the target angles to the Arduino
 			self.robotarm.forwardKinematics(link1TargetAngle, link2TargetAngle, link3TargetAngle)
-			# Yield to other tasks for a short (but not too short) period of time
+			# Yield to other tasks for a short (but not too short) period of time and determine if control should continue
 			rospy.sleep(0.1)  # [sec]
-	
+			self.runRobotArmControl = self.shouldContinueControl()	
 
 
 if __name__ == '__main__':
