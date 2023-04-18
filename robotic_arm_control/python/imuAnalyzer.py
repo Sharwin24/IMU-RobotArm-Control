@@ -18,17 +18,18 @@ class IMUBuffer:
 	"""Class that holds a Buffer for the IMU Data. The IMU Data is held in this buffer which only contains
 		 up to a certain number of data points. The buffer is updated externally but the length of the buffer
 	   is maintained internally.
-    
+
 		 The data for this buffer is a list of floats representing IMU Angles in degrees.
-    
-	Attributes:	
+
+	Attributes:
 			size (int): The size of the buffer, which is the maximum number of data points
 			buffer (List[float]): The buffer of IMU data
 	"""
+
 	def __init__(self, size: int = 50):
 		self.size = size
 		self.buffer = []
-  
+
 	def update(self, data: float):
 		"""Updates the buffer with a new data point.
 		"""
@@ -50,9 +51,12 @@ class IMUBuffer:
 
 class IMUPubSub:
 	def __init__(self, arduinoPort, arduinoBaud):
-		self.elbowIMUSub = rospy.Subscriber("/elbow_imu", Vectornav, self.elbowImuCallback)
-		self.shoulderIMUSub = rospy.Subscriber("/shoulder_imu", Vectornav, self.shoulderImuCallback)
-		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
+		self.elbowIMUSub = rospy.Subscriber(
+			"/elbow_imu", Vectornav, self.elbowImuCallback)
+		self.shoulderIMUSub = rospy.Subscriber(
+			"/shoulder_imu", Vectornav, self.shoulderImuCallback)
+		self.arduinoCmdPub = rospy.Publisher(
+			'/arduino_command', String, queue_size=10)
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
@@ -61,26 +65,26 @@ class IMUPubSub:
 		self.link1TargetAngleBuffer = IMUBuffer()
 		self.link2TargetAngleBuffer = IMUBuffer()
 		self.link3TargetAngleBuffer = IMUBuffer()
-  
+
 	def calibrateZeroAngles(self, calibration_length: float = 2):
-		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
+	"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
 
 		Args:
 				calibration_length (float, optional): The length of time to calibrate the zero angles [sec], defaults to 2
   	"""
-		# Starts a timer to keep track of the calibration period and initializes the lists of angles
-		# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
-		rospy.loginfo("Calibrating zero angles...")
-		start_time = rospy.get_time()
-		while rospy.get_time() - start_time < calibration_length:
+	# Starts a timer to keep track of the calibration period and initializes the lists of angles
+	# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
+	rospy.loginfo("Calibrating zero angles...")
+	start_time = rospy.get_time()
+	while rospy.get_time() - start_time < calibration_length:
 			# While we are calibrating, yield to other tasks
-			rospy.sleep(0.01) # [sec]
+			rospy.sleep(0.01)  # [sec]
 		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
 		self.zeroAngles[1] = self.link1TargetAngleBuffer.getAverage()
 		self.zeroAngles[2] = self.link2TargetAngleBuffer.getAverage()
 		self.zeroAngles[3] = self.link3TargetAngleBuffer.getAverage()
 		rospy.loginfo("Calibration complete!")
-		
+
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
 			Each link should have a "zero" angle which is calibrated on initialization or during
@@ -109,20 +113,17 @@ class IMUPubSub:
 		"""
 		pass
 
-	def publishToArduino(self, linkAngles: String):
-		"""Given the angles for each link as a tuple, this function publishes the angles to the
-			robot controller (Arduino) via rosserial to the topic "arduino_command" using the
-			ArduinoCommand message type via the arduinoCmdPub publisher.
-
-		Args:
-				linkAngles (String): A string of the angles for each link in degrees with the format
-					"link1Angle,link2Angle,link3Angle"
+	def runRobotArmControl(self):
+		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
+			The Robot Arm Control loop obtains the latest target angles from the IMU buffers and then 
+			sends the commands to the robot controller (Arduino) via serial.
+   
+			This control loop should also validate the values as much as possible before sending them to the Arduino.
+			The Arduino also runs validation which will reject commands when:
+			 - The target angle is close to the current angle
+			 - The robot arm is currently moving
 		"""
-		anglesList = linkAngles.split(",")
-		arduinoCmd = String()
-		arduinoCmd.data = f"{anglesList[0]},{anglesList[1]},{anglesList[2]}"
-		rospy.logdebug(f"Publishing to Arduino: {arduinoCmd.data}")
-		self.arduinoCmdPub.publish(arduinoCmd)
+		pass
 
 
 if __name__ == '__main__':
