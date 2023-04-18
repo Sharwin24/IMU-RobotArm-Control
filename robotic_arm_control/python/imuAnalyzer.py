@@ -56,7 +56,7 @@ class IMUPubSub:
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
-		self.zeroAngles = {1: 0, 2: 0, 3: 0}  # [degrees]
+		self.zeroAngles: dict[int, float] = {1: 0, 2: 0, 3: 0}  # [degrees]
 		# Buffers for each link's target angle so we can store a list of angles
 		self.link1TargetAngleBuffer = IMUBuffer()
 		self.link2TargetAngleBuffer = IMUBuffer()
@@ -72,15 +72,14 @@ class IMUPubSub:
 		# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
 		rospy.loginfo("Calibrating zero angles...")
 		start_time = rospy.get_time()
-		while rospy.get_time() - start_time <= calibration_length:
-			pass # While we are calibrating
+		while rospy.get_time() - start_time < calibration_length:
+			# While we are calibrating, yield to other tasks
+			rospy.sleep(0.01) # [sec]
 		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
 		self.zeroAngles[1] = self.link1TargetAngleBuffer.getAverage()
 		self.zeroAngles[2] = self.link2TargetAngleBuffer.getAverage()
 		self.zeroAngles[3] = self.link3TargetAngleBuffer.getAverage()
 		rospy.loginfo("Calibration complete!")
-
-	
 		
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
@@ -132,6 +131,7 @@ if __name__ == '__main__':
 	try:
 		rospy.init_node('imuAnalyzer', anonymous=True)
 		IMUAnalyzer = IMUPubSub(arduinoPort="/dev/ttyACM0", arduinoBaud=9600)
+		IMUAnalyzer.calibrateZeroAngles()
 		rospy.spin()
 	except rospy.ROSInterruptException:
 		print("ROS Interrupt Exception, exiting...")
