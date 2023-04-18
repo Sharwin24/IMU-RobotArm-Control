@@ -102,7 +102,8 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# self.linkAngleBuffers[2].update(data.z)
+		# self.linkAngleBuffers[2]
+  	# self.linkVelocityBuffer[2]
 		pass
 
 	def shoulderImuCallback(self, data):
@@ -117,7 +118,8 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# self.linkAngleBuffers[1].update(data.z)
+		# self.linkAngleBuffers[1]
+  	# self.linkVelocityBuffer[1]
 		pass
 	
 	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
