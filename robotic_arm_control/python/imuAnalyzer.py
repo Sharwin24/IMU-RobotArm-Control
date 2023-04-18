@@ -12,9 +12,6 @@ import numpy as np
 import sys
 from RobotArm import RobotArm
 
-# The length of the calibration period, which will assign the "zero" values [ms]
-calibration_length = 5000 # [ms]
-
 
 class IMUPubSub:
 	def __init__(self, arduinoPort, arduinoBaud):
@@ -24,11 +21,13 @@ class IMUPubSub:
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
-		zeroAngles = {1: 0, 2: 0, 3: 0}  # [degrees]
+		self.zeroAngles = {1: 0, 2: 0, 3: 0}  # [degrees]
 		# Lists of the target angles for each link, the latest angle is the last element in the list
-		targetAngles = {1: [], 2: [], 3: []}  # [degrees]
+		self.targetAngles = {1: [], 2: [], 3: []}  # [degrees]
+  	# The length of the calibration period, which will assign the "zero" values [ms]
+		self.calibration_length = 5000  # [ms]
   
-	def calibrateZeroAngles(self, calibration_length):
+	def calibrateZeroAngles(self):
 		"""Calibrates the zero angles for each link by averaging the angles over a period of time.
   	"""
 		pass
