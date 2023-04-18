@@ -93,12 +93,11 @@ class IMUPubSub:
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
 			Each link should have a "zero" angle which is calibrated on initialization or during
-			the first moments of operation. The angles should be relative to the "zero" angle,
-			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
-   ss
+			the first moments of operation. The angles should be relative to the "zero" angle.
+
 			This function should only update the IMUBuffers for link 2.
 			The elbow IMU rotates on the Z axis.
-
+		
 		Args:
 				data (Vectornav): The IMU data
 		"""
@@ -109,9 +108,8 @@ class IMUPubSub:
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
 			Each link should have a "zero" angle which is calibrated on initialization or during
-			the first moments of operation. The angles should be relative to the "zero" angle,
-			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
-   
+			the first moments of operation. The angles should be relative to the "zero" angle.
+
 			This function should only update the IMUBuffers for link 1.
 			The shoulder IMU rotates on the Z axis.
 
