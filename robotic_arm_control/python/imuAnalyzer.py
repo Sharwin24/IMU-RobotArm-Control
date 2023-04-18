@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-The IMUController is a ROS node that subscribes to the IMU data and computes the angles for
-each link of the robot. It then publishes the angles to the robot controller via rosserial.
+The IMUAnalyzer is a ROS node that subscribes to the IMU data and computes the angles for
+each link of the robot. It then publishes the angles to the robot controller (Arduino) via serial.
 """
 
 import rospy
@@ -67,11 +67,11 @@ class IMUPubSub:
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
 		self.zeroAngles: dict[int, float] = {1: 0, 2: 0, 3: 0}  # [degrees]
-		# Buffers for each link's target angle so we can store a list of angles
-		self.link1TargetAngleBuffer = IMUBuffer()
-		self.link2TargetAngleBuffer = IMUBuffer()
-		self.link3TargetAngleBuffer = IMUBuffer()
+		# Buffers for each link's target angle and velocity
+		self.linkAngleBuffers: dict[int, IMUBuffer] = {1: IMUBuffer(), 2: IMUBuffer(), 3: IMUBuffer()}
+		self.linkVelocityBuffers: dict[int, IMUBuffer] = {1: IMUBuffer(10), 2: IMUBuffer(10), 3: IMUBuffer(10)}
 		self.runningRobotControl = False
+		self.useVariableSpeed = False
 
 	def calibrateZeroAngles(self, calibration_length: float = 2):
 		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
@@ -86,23 +86,23 @@ class IMUPubSub:
 			# While we are calibrating, yield to other tasks
 			rospy.sleep(0.01)  # [sec]
 		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
-		self.zeroAngles[1] = self.link1TargetAngleBuffer.getAverage()
-		self.zeroAngles[2] = self.link2TargetAngleBuffer.getAverage()
-		self.zeroAngles[3] = self.link3TargetAngleBuffer.getAverage()
-		rospy.loginfo("Calibration complete!")
+		for linkNumber in self.linkAngleBuffers:
+			self.zeroAngles[linkNumber] = self.linkAngleBuffers[linkNumber].getAverage()
+		rospy.loginfo("Calibration complete -> Zero angles: {}".format(self.zeroAngles))
 
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
 			Each link should have a "zero" angle which is calibrated on initialization or during
 			the first moments of operation. The angles should be relative to the "zero" angle,
 			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
-   
-			This function should only update the IMUBuffer for link 2.
+   ss
+			This function should only update the IMUBuffers for link 2.
 			The elbow IMU rotates on the Z axis.
 
 		Args:
 				data (Vectornav): The IMU data
 		"""
+		# self.linkAngleBuffers[2].update(data.z)
 		pass
 
 	def shoulderImuCallback(self, data):
@@ -111,12 +111,13 @@ class IMUPubSub:
 			the first moments of operation. The angles should be relative to the "zero" angle,
 			and then will be published/dispatched to the robot controller (Arduino) via rosserial.
    
-			This function should only update the IMUBuffer for link 1.
+			This function should only update the IMUBuffers for link 1.
 			The shoulder IMU rotates on the Z axis.
 
 		Args:
 				data (Vectornav): The IMU data
 		"""
+		# self.linkAngleBuffers[1].update(data.z)
 		pass
 	
 	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
@@ -161,28 +162,34 @@ class IMUPubSub:
 		self.runRobotArmControl = True
 		while (self.runRobotArmControl):
     	# Get the latest target angles from the IMU buffers
-			link1TargetAngle = self.link1TargetAngleBuffer.getLatest()
-			link2TargetAngle = self.link2TargetAngleBuffer.getLatest()
-			link3TargetAngle = self.link3TargetAngleBuffer.getLatest()
+			link1TargetAngle = self.linkAngleBuffers[1].getLatest() - self.zeroAngles[1]
+			link2TargetAngle = self.linkAngleBuffers[2].getLatest() - self.zeroAngles[2]
+			link3TargetAngle = self.linkAngleBuffers[3].getLatest() - self.zeroAngles[3]
+			# Get the most recent angular velocity from the IMU buffers
+			link1Velocity = self.linkVelocityBuffers[1].getAverage()
+			link2Velocity = self.linkVelocityBuffers[2].getAverage()
+			link3Velocity = self.linkVelocityBuffers[3].getAverage()
 			# Validate the target angles
 			link1Validation = self.validateTargetAngle(1, link1TargetAngle)
 			link2Validation = self.validateTargetAngle(2, link2TargetAngle)
 			link3Validation = self.validateTargetAngle(3, link3TargetAngle)
 			if link1Validation and link2Validation and link3Validation:
 				# Send the target angles to the Arduino if they are valid
+				if self.useVariableSpeed:
+					self.robotarm.setSpeed(1, link1Velocity)
+					self.robotarm.setSpeed(2, link2Velocity)
+					self.robotarm.setSpeed(3, link3Velocity)
 				self.robotarm.forwardKinematics(link1TargetAngle, link2TargetAngle, link3TargetAngle)
 			# Yield to other tasks for a short (but not too short) period of time and determine if control should continue
 			rospy.sleep(0.1)  # [sec]
-			self.runRobotArmControl = self.shouldContinueControl()	
-
+			self.runRobotArmControl = self.shouldContinueControl()
 
 if __name__ == '__main__':
-	# args = rospy.myargv(argv=sys.argv)
-	# arduinoPort = args[1]
 	try:
 		rospy.init_node('imuAnalyzer', anonymous=True)
 		IMUAnalyzer = IMUPubSub(arduinoPort="/dev/ttyACM0", arduinoBaud=9600)
 		IMUAnalyzer.calibrateZeroAngles()
+		IMUAnalyzer.runRobotArmControl()
 		rospy.spin()
 	except rospy.ROSInterruptException:
 		print("ROS Interrupt Exception, exiting...")
