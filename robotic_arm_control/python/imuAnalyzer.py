@@ -9,7 +9,6 @@ import rospy
 from robotic_arm_control.msg import Vectornav
 from std_msgs.msg import String
 import numpy as np
-import sys
 from RobotArm import RobotArm
 from typing import List
 
@@ -38,25 +37,32 @@ class IMUBuffer:
 			self.buffer.pop(0)
 
 	def getBuffer(self) -> List[float]:
-		"""Returns the buffer.
-		"""
 		return self.buffer
 
 	def getAverage(self) -> float:
-		return np.mean(self.buffer)
+		try:
+			return np.mean(self.buffer)
+		except:
+			return 0
 
 	def getLatest(self) -> float:
-		return self.buffer[-1]
+		try:
+			return self.buffer[-1]
+		except IndexError:
+			return 0
+	
+	def getOldest(self) -> float:
+		try:
+			return self.buffer[0]
+		except IndexError:
+			return 0
 
 
 class IMUPubSub:
 	def __init__(self, arduinoPort, arduinoBaud):
-		self.elbowIMUSub = rospy.Subscriber(
-			"/elbow_imu", Vectornav, self.elbowImuCallback)
-		self.shoulderIMUSub = rospy.Subscriber(
-			"/shoulder_imu", Vectornav, self.shoulderImuCallback)
-		self.arduinoCmdPub = rospy.Publisher(
-			'/arduino_command', String, queue_size=10)
+		self.elbowIMUSub = rospy.Subscriber("/elbow_imu", Vectornav, self.elbowImuCallback)
+		self.shoulderIMUSub = rospy.Subscriber("/shoulder_imu", Vectornav, self.shoulderImuCallback)
+		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
