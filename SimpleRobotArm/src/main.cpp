@@ -52,7 +52,9 @@ void serialReactions() {
     waitForSerialInput();
     int linkNumber = Serial.parseInt();
     waitForSerialInput();
-    float newSpeed = Serial.parseFloat();
+    float newSpeedRPM = Serial.parseFloat();
+    // Convert RPM to steps/sec
+    float newSpeed = STEPS_PER_REV * (newSpeedRPM / 60.0f);
     writeInfo("setSpeed [ Link " + String(linkNumber) + ", " + String(newSpeed) + " steps/sec ]");
     robotArm.setSpeed(linkNumber, newSpeed);
   } else if (input.equals("on")) {
