@@ -11,6 +11,7 @@ from std_msgs.msg import String
 import numpy as np
 from RobotArm import RobotArm
 from typing import List
+import math
 
 
 class IMUBuffer:
@@ -90,6 +91,19 @@ class IMUPubSub:
 			self.zeroAngles[linkNumber] = self.linkAngleBuffers[linkNumber].getAverage()
 		rospy.loginfo("Calibration complete -> Zero angles: {}".format(self.zeroAngles))
 
+	def quat2eul(self, orientation) -> float:
+		"""Converts orientation object from a given quaternion measured in radians to a z-axis angle in degrees.
+		"""
+		w = orientation.w
+		x = orientation.x
+		y = orientation.y
+		z = orientation.z
+  
+		t0 = 2.0 * (w * z + x * y)
+		t1 = 1.0 - 2.0 * (y * y + z * z)
+		yaw_z = (180.0/math.pi) * math.atan2(t0, t1)
+		return float(yaw_z)
+
 	def elbowImuCallback(self, data):
 		"""Handles the input elbow IMU data and computes the angle for link 2.
 			Each link should have a "zero" angle which is calibrated on initialization or during
@@ -101,10 +115,13 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# self.linkAngleBuffers[2]
-		# self.linkVelocityBuffer[2]
-		pass
 
+		relAngle = float(self.quat2eul(data.imu.orientation) - self.zeroAngles[2])
+		self.linkAngleBuffers[2].update(relAngle)
+
+		# assume all link starting velocities are 0
+		self.linkVelocityBuffers[2].update(data.imu.angular_velocity.z)
+		
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
 			Each link should have a "zero" angle which is calibrated on initialization or during
@@ -116,10 +133,12 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		# self.linkAngleBuffers[1]
-		# self.linkVelocityBuffer[1]
-		pass
-	
+		relAngle = float(self.quat2eul(data.imu.orientation) - self.zeroAngles[1])
+		self.linkAngleBuffers[1].update(relAngle)
+
+		# assume all link starting velocities are 0
+		self.linkVelocityBuffers[1].update(data.imu.angular_velocity.z)
+  
 	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
 		"""Validates the given target angle for the given link number
 
@@ -147,9 +166,9 @@ class IMUPubSub:
 		Returns:
 				bool: True if the control loop should continue running, False otherwise
 		"""
+
   	# TODO: Implement this function as we find out what aspects we run into that require stopping the control loop
 		return True 
-
 
 	def runRobotArmControl(self):
 		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
