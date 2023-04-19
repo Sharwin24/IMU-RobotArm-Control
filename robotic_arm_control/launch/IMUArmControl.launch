@@ -1,8 +1,8 @@
 <launch>
 	<arg name="elbow_imu_port" default="/dev/ttyUSB0" />
-	<!-- <arg name="shoulder_imu_port" default="/dev/pts/7" /> -->
+	<arg name="shoulder_imu_port" default="/dev/ttyUSB1" />
 	<node pkg="robotic_arm_control" name="elbowIMUDriver" type="elbowIMUDriver.py" args="$(arg elbow_imu_port)" output="screen"/>
-	<!-- <node pkg="robotic_arm_control" name="shoulderIMUDriver" type="shoulderIMUDriver.py" args="$(arg shoulder_imu_port)" output="screen"/> -->
+	<node pkg="robotic_arm_control" name="shoulderIMUDriver" type="shoulderIMUDriver.py" args="$(arg shoulder_imu_port)" output="screen"/>
 	<node pkg="robotic_arm_control" name="imuAnalyzer" type="imuAnalyzer.py" output="screen"/>
 	<node pkg='robotic_arm_control' name='convert_to_quaternion_server' type='convert_to_quaternion_server.py' output='screen'/> 
 </launch>

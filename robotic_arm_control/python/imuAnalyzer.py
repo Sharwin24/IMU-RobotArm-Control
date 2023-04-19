@@ -11,7 +11,6 @@ from std_msgs.msg import String
 import numpy as np
 from RobotArm import RobotArm
 from typing import List
-import math
 
 
 class IMUBuffer:
@@ -26,9 +25,9 @@ class IMUBuffer:
 			buffer (List[float]): The buffer of IMU data
 	"""
 
-	def __init__(self, size: int = 50):
+	def __init__(self, size: int = 100):
 		self.size = size
-		self.buffer = []
+		self.buffer = [0]
 
 	def update(self, data: float):
 		"""Updates the buffer with a new data point.
@@ -51,7 +50,7 @@ class IMUBuffer:
 			return self.buffer[-1]
 		except IndexError:
 			return 0
-	
+
 	def getOldest(self) -> float:
 		try:
 			return self.buffer[0]
@@ -61,34 +60,41 @@ class IMUBuffer:
 
 class IMUPubSub:
 	def __init__(self, arduinoPort, arduinoBaud):
-		self.elbowIMUSub = rospy.Subscriber("/elbow_imu", Vectornav, self.elbowImuCallback)
-		self.shoulderIMUSub = rospy.Subscriber("/shoulder_imu", Vectornav, self.shoulderImuCallback)
-		self.arduinoCmdPub = rospy.Publisher('/arduino_command', String, queue_size=10)
+		self.elbowIMUSub = rospy.Subscriber(
+			"/elbow_imu", Vectornav, self.elbowImuCallback)
+		self.shoulderIMUSub = rospy.Subscriber(
+			"/shoulder_imu", Vectornav, self.shoulderImuCallback)
+		self.arduinoCmdPub = rospy.Publisher(
+			'/arduino_command', String, queue_size=10)
 		rospy.loginfo("IMU PubSub initialized")
 		self.robotarm = RobotArm(arduinoPort, arduinoBaud)
   	# The zero angles for each link, which are calibrated on initialization or during the first moments of operation
-		self.zeroAngles: dict[int, float] = {1: 0, 2: 0, 3: 0}  # [degrees]
+		self.zeroAngles = {1: 0.0, 2: 0.0, 3: 0.0}  # [degrees]
 		# Buffers for each link's target angle and velocity
-		self.linkAngleBuffers: dict[int, IMUBuffer] = {1: IMUBuffer(), 2: IMUBuffer(), 3: IMUBuffer()}
-		self.linkVelocityBuffers: dict[int, IMUBuffer] = {1: IMUBuffer(10), 2: IMUBuffer(10), 3: IMUBuffer(10)}
+		self.linkAngleBuffers: dict[int, IMUBuffer] = {
+			1: IMUBuffer(), 2: IMUBuffer(), 3: IMUBuffer()}
+		self.linkVelocityBuffers: dict[int, IMUBuffer] = {
+			1: IMUBuffer(10), 2: IMUBuffer(10), 3: IMUBuffer(10)}
 		self.runningRobotControl = False
 		self.useVariableSpeed = False
 
-	def calibrateZeroAngles(self, calibration_length: float = 2):
+	def calibrateZeroAngles(self, calibration_length: float = 10):
 		"""Calibrates the zero angles for each link by averaging the angles over the given period of time.
 		Args:
 			calibration_length (float, optional): The length of time to calibrate the zero angles [sec], defaults to 2
 		"""
 		# Starts a timer to keep track of the calibration period and initializes the lists of angles
 		# The IMU data is automatically updated in the callback functions to the IMUBuffers for each link
-		rospy.loginfo("Calibrating zero angles...")
+		rospy.loginfo(f"Calibrating zero angles for {calibration_length} seconds ...")
 		start_time = rospy.get_time()
 		while rospy.get_time() - start_time < calibration_length:
 			# While we are calibrating, yield to other tasks
-			rospy.sleep(0.01)  # [sec]
+			rospy.loginfo("Calibrating ...")
+			rospy.sleep(0.1)  # [sec]
 		# Once the calibration period is over, we average the angles in the buffers to get the zero angles
-		for linkNumber in self.linkAngleBuffers:
-			self.zeroAngles[linkNumber] = self.linkAngleBuffers[linkNumber].getAverage()
+		self.zeroAngles[1] = self.linkAngleBuffers[1].getAverage()
+		self.zeroAngles[2] = self.linkAngleBuffers[2].getAverage()
+		self.zeroAngles[3] = self.linkAngleBuffers[3].getAverage()
 		rospy.loginfo("Calibration complete -> Zero angles: {}".format(self.zeroAngles))
 
 	def quat2eul(self, orientation) -> float:
@@ -98,10 +104,10 @@ class IMUPubSub:
 		x = orientation.x
 		y = orientation.y
 		z = orientation.z
-  
+
 		t0 = 2.0 * (w * z + x * y)
 		t1 = 1.0 - 2.0 * (y * y + z * z)
-		yaw_z = (180.0/math.pi) * math.atan2(t0, t1)
+		yaw_z = (180.0/np.pi) * np.arctan2(t0, t1)
 		return float(yaw_z)
 
 	def elbowImuCallback(self, data):
@@ -116,12 +122,14 @@ class IMUPubSub:
 				data (Vectornav): The IMU data
 		"""
 
-		relAngle = float(self.quat2eul(data.imu.orientation) - self.zeroAngles[2])
+		# relAngle = self.quat2eul(data.imu.orientation)
+		relAngle = np.rad2deg(data.yaw)
 		self.linkAngleBuffers[2].update(relAngle)
 
 		# assume all link starting velocities are 0
-		self.linkVelocityBuffers[2].update(data.imu.angular_velocity.z)
-		
+		rpm = data.imu.angular_velocity.z * 60 / (2 * np.pi)
+		self.linkVelocityBuffers[2].update(rpm)
+
 	def shoulderImuCallback(self, data):
 		"""Handles the input shoulder IMU data and computes the angle for link 1.
 			Each link should have a "zero" angle which is calibrated on initialization or during
@@ -133,32 +141,39 @@ class IMUPubSub:
 		Args:
 				data (Vectornav): The IMU data
 		"""
-		relAngle = float(self.quat2eul(data.imu.orientation) - self.zeroAngles[1])
+		# relAngle = self.quat2eul(data.imu.orientation)
+		relAngle = np.rad2deg(data.yaw)
 		self.linkAngleBuffers[1].update(relAngle)
 
 		# assume all link starting velocities are 0
-		self.linkVelocityBuffers[1].update(data.imu.angular_velocity.z)
-  
-	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
-		"""Validates the given target angle for the given link number
+		rpm = data.imu.angular_velocity.z * 60 / (2 * np.pi)
+		self.linkVelocityBuffers[1].update(rpm)
+
+	def clampTargetAngle(self, linkNumber: int, angle: float) -> bool:
+		"""Clamps the given target angle for the given link number to it's range of motion
 
 		Args:
 				linkNumber (int): the link number
 				angle (float): the target angle [degrees]
 		"""
-		# Switch on the link number
-		match linkNumber: 
-			case 1:
-				# Link 1 should be between -90 and 90 degrees
-				return -90 <= angle <= 90
-			case 2:
-				# Link 2 should be between -90 and 90 degrees
-				return -90 <= angle <= 90
-			case 3:
-				return True
-			case _:
-				# If the link number is not 1, 2, or 3, then it is invalid
-				return False
+		if linkNumber == 1:
+			if angle < 0:
+				return 0
+			elif angle > 120:
+				return 120
+			else:
+				return angle
+		elif linkNumber == 2:
+			if angle < -120:
+				return -120
+			elif angle > 120:
+				return 120
+			else:
+				return angle
+		elif linkNumber == 3:
+			return angle
+		else:
+			return angle
 
 	def shouldContinueControl(self) -> bool:
 		"""Determines if the control loop should continue running. This is used to stop the control loop.
@@ -168,7 +183,7 @@ class IMUPubSub:
 		"""
 
   	# TODO: Implement this function as we find out what aspects we run into that require stopping the control loop
-		return True 
+		return True
 
 	def runRobotArmControl(self):
 		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
@@ -182,7 +197,7 @@ class IMUPubSub:
 		"""
 		self.runRobotArmControl = True
 		while (self.runRobotArmControl):
-    	# Get the latest target angles from the IMU buffers
+		  # Get the latest target angles from the IMU buffers
 			link1TargetAngle = self.linkAngleBuffers[1].getLatest() - self.zeroAngles[1]
 			link2TargetAngle = self.linkAngleBuffers[2].getLatest() - self.zeroAngles[2]
 			link3TargetAngle = self.linkAngleBuffers[3].getLatest() - self.zeroAngles[3]
@@ -190,20 +205,23 @@ class IMUPubSub:
 			link1Velocity = self.linkVelocityBuffers[1].getAverage()
 			link2Velocity = self.linkVelocityBuffers[2].getAverage()
 			link3Velocity = self.linkVelocityBuffers[3].getAverage()
-			# Validate the target angles
-			link1Validation = self.validateTargetAngle(1, link1TargetAngle)
-			link2Validation = self.validateTargetAngle(2, link2TargetAngle)
-			link3Validation = self.validateTargetAngle(3, link3TargetAngle)
-			if link1Validation and link2Validation and link3Validation:
-				# Send the target angles to the Arduino if they are valid
-				if self.useVariableSpeed:
-					self.robotarm.setSpeed(1, link1Velocity)
-					self.robotarm.setSpeed(2, link2Velocity)
-					self.robotarm.setSpeed(3, link3Velocity)
-				self.robotarm.forwardKinematics(link1TargetAngle, link2TargetAngle, link3TargetAngle)
+			# Clamp the target angles
+			link1ClampedAngle = self.clampTargetAngle(1, link1TargetAngle)
+			link2ClampedAngle = self.clampTargetAngle(2, link2TargetAngle)
+			link3ClampedAngle = self.clampTargetAngle(3, link3TargetAngle)
+			# Send the target angles to the Arduino once it is ready
+			self.robotarm.waitForReady()
+			if self.useVariableSpeed:
+				self.robotarm.setSpeed(1, link1Velocity)
+				self.robotarm.setSpeed(2, link2Velocity)
+				self.robotarm.setSpeed(3, link3Velocity)
+			rospy.loginfo("Target angles: {}, {}, {}".format(link1TargetAngle, link2TargetAngle, link3TargetAngle))
+			rospy.loginfo("Clamped angles: {}, {}, {}".format(link1ClampedAngle, link2ClampedAngle, link3ClampedAngle))
+			self.robotarm.forwardKinematics(link1ClampedAngle, link2ClampedAngle, link3ClampedAngle)
 			# Yield to other tasks for a short (but not too short) period of time and determine if control should continue
 			rospy.sleep(0.1)  # [sec]
 			self.runRobotArmControl = self.shouldContinueControl()
+
 
 if __name__ == '__main__':
 	try:

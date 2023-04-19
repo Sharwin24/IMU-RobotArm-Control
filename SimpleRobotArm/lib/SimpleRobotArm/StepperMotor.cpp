@@ -89,17 +89,10 @@ void StepperMotor::setTarget(int targetStep) {
  */
 void StepperMotor::setTargetAngle(float targetAngleDegrees) {
 	int steps = degreeToSteps(targetAngleDegrees);
+	this->currentAngle = targetAngleDegrees;
 	writeDebug("setTargetAngle [deg,steps] -> Link " + String(this->linkNumber) +
 		" [ " + String(targetAngleDegrees) + ", " + String(steps) + " ]");
 	setTarget(steps);
-}
-
-/**
- * @brief Sets the current angle based on the current step
- *
- */
-void StepperMotor::updateAngle() {
-	this->currentAngle = (this->current % STEPS_PER_REV) * (360.0f / STEPS_PER_REV);
 }
 
 /**
@@ -120,7 +113,7 @@ bool StepperMotor::isMoving() {
  * @param tolerance the tolerance [degrees]
  */
 bool StepperMotor::atAngle(float angle, float tolerance) {
-	return abs(this->currentAngle - angle) <= tolerance;
+	return abs(angle - this->currentAngle) <= tolerance;
 }
 
 /**

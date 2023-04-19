@@ -18,35 +18,46 @@ RobotArm robotArm = RobotArm();
  * @param msg the arduino command, contained in a string with the format:
  *            "link1AngleDeg,link2AngleDeg,link3AngleDeg"
  */
-void arduinoCommandCallback(const std_msgs::String& msg) {
-  String input = msg.data;
-  writeDebug("Received -> " + input);
-  if (robotArm.isMoving()) { return; }
-  float link1AngleDeg = input.substring(0, input.indexOf(',')).toFloat();
-  float link2AngleDeg = input.substring(input.indexOf(',') + 1, input.lastIndexOf(',')).toFloat();
-  float link3AngleDeg = input.substring(input.lastIndexOf(',') + 1, input.length() - 1).toFloat();
-  if (robotArm.atConfiguration(link1AngleDeg, link2AngleDeg, link3AngleDeg)) { return; }
-  robotArm.forwardKinematics(link1AngleDeg, link2AngleDeg, link3AngleDeg);
-}
+ // void arduinoCommandCallback(const std_msgs::String& msg) {
+ //   String input = msg.data;
+ //   writeDebug("Received -> " + input);
+ //   float link1AngleDeg = input.substring(0, input.indexOf(',')).toFloat();
+ //   float link2AngleDeg = input.substring(input.indexOf(',') + 1, input.lastIndexOf(',')).toFloat();
+ //   float link3AngleDeg = input.substring(input.lastIndexOf(',') + 1, input.length() - 1).toFloat();
+ //   robotArm.forwardKinematics(link1AngleDeg, link2AngleDeg, link3AngleDeg);
+ // }
 
-// Ros objects
-// ros::NodeHandle nodeHandler;
-// ros::Subscriber<std_msgs::String> sub("/arduino_command", &arduinoCommandCallback);
+ // Ros objects
+ // ros::NodeHandle nodeHandler;
+ // ros::Subscriber<std_msgs::String> sub("/arduino_command", &arduinoCommandCallback);
 
 
 void serialReactions() {
   writeState("ready");
   waitForSerialInput();
   String input = Serial.readStringUntil('\n');
+  if (input.equals("") || input.equals("\n") || input.equals("\r")) {
+    return;
+  }
   writeInfo("Received - " + input);
   if (input.equals("fk")) {
     waitForSerialInput();
-    float targetAngle1 = Serial.parseFloat();
+    String angleString1 = Serial.readStringUntil('\n');
+    float targetAngle1 = angleString1.toFloat();
     waitForSerialInput();
-    float targetAngle2 = Serial.parseFloat();
+    String angleString2 = Serial.readStringUntil('\n');
+    float targetAngle2 = angleString2.toFloat();
     waitForSerialInput();
-    float targetAngle3 = Serial.parseFloat();
+    String angleString3 = Serial.readStringUntil('\n');
+    float targetAngle3 = angleString3.toFloat();
     writeInfo("FK [" + String(targetAngle1) + ", " + String(targetAngle2) + ", " + String(targetAngle3) + "]");
+    if (robotArm.isMoving()) {
+      writeDebug("Already moving");
+      return;
+    } else if (robotArm.atConfiguration(targetAngle1, targetAngle2, targetAngle3)) {
+      writeDebug("Already at configuration");
+      return;
+    }
     robotArm.forwardKinematics(targetAngle1, targetAngle2, targetAngle3);
   } else if (input.equals("setSpeed")) {
     waitForSerialInput();
@@ -71,7 +82,6 @@ void setup() {
   robotArm.init();
   robotArm.calibrate();
   pinMode(LED_BUILTIN, OUTPUT);
-
   // nodeHandler.initNode();
   // nodeHandler.subscribe(sub);
 }

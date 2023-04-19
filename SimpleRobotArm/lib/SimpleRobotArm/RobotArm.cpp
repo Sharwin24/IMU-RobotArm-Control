@@ -46,7 +46,8 @@ void RobotArm::setSpeed(int linkNumber, float speed) {
  * @param targetAngle3 the target angle of link 3 [deg]
  */
 void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float targetAngle3) {
-	this->isMoving = true;
+	writeState("Moving");
+	this->moving = true;
 	// Set all target angles
 	this->link1.setTargetAngle(targetAngle1);
 	this->link2.setTargetAngle(targetAngle2);
@@ -60,13 +61,11 @@ void RobotArm::forwardKinematics(float targetAngle1, float targetAngle2, float t
 		this->link2.update();
 		this->link3.update();
 	}
-	// Update final angles
-	this->link1.updateAngle();
-	this->link2.updateAngle();
-	this->link3.updateAngle();
 	writeDebug("Movement complete at ");
-	writeDebug("L1 -> " + String(this->link1.getCurrent()) + " L2 -> " + String(this->link2.getCurrent()) + " L3 -> " + String(this->link3.getCurrent()));
-	this->isMoving = false;
+	writeDebug("L1 -> " + String(this->link1.getCurrent()) + ", " + String(this->link1.getCurrentAngle())
+		+ " L2 -> " + String(this->link2.getCurrent()) + ", " + String(this->link2.getCurrentAngle())
+		+ " L3 -> " + String(this->link3.getCurrent()) + ", " + String(this->link3.getCurrentAngle()));
+	this->moving = false;
 }
 
 /**
@@ -118,4 +117,4 @@ bool RobotArm::atConfiguration(float angle1, float angle2, float angle3) {
 		&& this->link3.atAngle(angle3);
 }
 
-bool RobotArm::isMoving() { return this->isMoving; }
+bool RobotArm::isMoving() { return this->moving; }

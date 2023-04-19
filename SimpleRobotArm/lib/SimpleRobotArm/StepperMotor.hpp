@@ -25,9 +25,7 @@ public:
 
 	// State Methods
 	bool isMoving();
-	bool atAngle(float angleDeg, float tolerance = 5.0f);
-	void updateAngle();
-
+	bool atAngle(float angleDeg, float tolerance = 1.0f);
 
 	// Movement Methods
 	void stepMotor();

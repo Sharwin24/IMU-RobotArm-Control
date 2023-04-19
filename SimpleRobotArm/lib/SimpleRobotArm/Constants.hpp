@@ -1,7 +1,7 @@
 #pragma once
 
-constexpr int STEPS_PER_REV = 8000;
-constexpr int LINK_RPM = 100; // [RPM]
+constexpr int STEPS_PER_REV = 6400;
+constexpr int LINK_RPM = 200; // [RPM]
 constexpr float LINK_STEPS_PER_SEC = STEPS_PER_REV * (LINK_RPM / 60.0f); // [steps/sec]
 
 constexpr int LINK_1_LENGTH = 125; // [mm]
