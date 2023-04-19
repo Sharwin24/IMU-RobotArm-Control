@@ -97,12 +97,12 @@ class IMUPubSub:
 
 			This function should only update the IMUBuffers for link 2.
 			The elbow IMU rotates on the Z axis.
-		
+
 		Args:
 				data (Vectornav): The IMU data
 		"""
 		# self.linkAngleBuffers[2]
-  	# self.linkVelocityBuffer[2]
+		# self.linkVelocityBuffer[2]
 		pass
 
 	def shoulderImuCallback(self, data):
@@ -117,7 +117,7 @@ class IMUPubSub:
 				data (Vectornav): The IMU data
 		"""
 		# self.linkAngleBuffers[1]
-  	# self.linkVelocityBuffer[1]
+		# self.linkVelocityBuffer[1]
 		pass
 	
 	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
@@ -147,7 +147,9 @@ class IMUPubSub:
 		Returns:
 				bool: True if the control loop should continue running, False otherwise
 		"""
-		pass
+  	# TODO: Implement this function as we find out what aspects we run into that require stopping the control loop
+		return True 
+
 
 	def runRobotArmControl(self):
 		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
