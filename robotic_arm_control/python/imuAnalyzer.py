@@ -92,7 +92,7 @@ class IMUPubSub:
 		rospy.loginfo("Calibration complete -> Zero angles: {}".format(self.zeroAngles))
 
 	def quat2eul(self, orientation) -> float:
-		"""Converts orientation object from a given quaternion measured in radians to an z-axis angle in degrees.
+		"""Converts orientation object from a given quaternion measured in radians to a z-axis angle in degrees.
 		"""
 		w = orientation.w
 		x = orientation.x
@@ -137,7 +137,7 @@ class IMUPubSub:
 
 		# assume all link starting velocities are 0
 		self.linkVelocityBuffers[1].update(data.imu.angular_velocity.z)
-
+  
 	def validateTargetAngle(self, linkNumber: int, angle: float) -> bool:
 		"""Validates the given target angle for the given link number
 
