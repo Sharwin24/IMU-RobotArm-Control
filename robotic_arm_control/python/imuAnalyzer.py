@@ -111,10 +111,11 @@ class IMUPubSub:
 
 			This function should only update the IMUBuffers for link 2.
 			The elbow IMU rotates on the Z axis.
-		
+
 		Args:
 				data (Vectornav): The IMU data
 		"""
+
 		relAngle = float(self.quat2eul(data.imu.orientation) - self.zeroAngles[2])
 		self.linkAngleBuffers[2].update(relAngle)
 
@@ -165,7 +166,9 @@ class IMUPubSub:
 		Returns:
 				bool: True if the control loop should continue running, False otherwise
 		"""
-		return True
+
+  	# TODO: Implement this function as we find out what aspects we run into that require stopping the control loop
+		return True 
 
 	def runRobotArmControl(self):
 		"""Runs the Robot Arm Control loop. This is expected to run after calibration of the zero angles.
