@@ -218,6 +218,7 @@ class IMUPubSub:
 			rospy.loginfo("Target angles: {}, {}, {}".format(link1TargetAngle, link2TargetAngle, link3TargetAngle))
 			rospy.loginfo("Clamped angles: {}, {}, {}".format(link1ClampedAngle, link2ClampedAngle, link3ClampedAngle))
 			self.robotarm.forwardKinematics(link1ClampedAngle, link2ClampedAngle, link3ClampedAngle)
+
 			# Yield to other tasks for a short (but not too short) period of time and determine if control should continue
 			rospy.sleep(0.1)  # [sec]
 			self.runRobotArmControl = self.shouldContinueControl()
