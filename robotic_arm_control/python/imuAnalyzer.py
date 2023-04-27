@@ -10,7 +10,6 @@ from robotic_arm_control.msg import Vectornav
 from std_msgs.msg import String
 import numpy as np
 from RobotArm import RobotArm
-from typing import List
 
 
 class IMUBuffer:
@@ -22,32 +21,36 @@ class IMUBuffer:
 
 	Attributes:
 			size (int): The size of the buffer, which is the maximum number of data points
-			buffer (List[float]): The buffer of IMU data
+			buffer (dict[int, float]): The buffer of IMU dat, a dictionary of entry number and data point
 	"""
 
-	def __init__(self, size: int = 100):
+	def __init__(self, size: int = 200):
 		self.size = size
-		self.buffer = [0]
+		self.buffer = {}
+		self.entryIndex = 0
 
 	def update(self, data: float):
 		"""Updates the buffer with a new data point.
 		"""
-		self.buffer.append(data)
-		if len(self.buffer) > self.size:
-			self.buffer.pop(0)
+		if self.entryIndex >= self.size:
+			self.entryIndex = 0
+		else:
+			self.entryIndex += 1
+		self.buffer[self.entryIndex] = data
 
-	def getBuffer(self) -> List[float]:
+	def getBuffer(self) -> dict[int, float]:
 		return self.buffer
 
 	def getAverage(self) -> float:
+		"""Computes the average of the data in the buffer."""
 		try:
-			return np.mean(self.buffer)
+			return sum(self.buffer.values()) / len(self.buffer)
 		except:
 			return 0
 
 	def getLatest(self) -> float:
 		try:
-			return self.buffer[-1]
+			return self.buffer[self.entryIndex]
 		except IndexError:
 			return 0
 
